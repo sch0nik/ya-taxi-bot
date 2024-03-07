@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ya-taxi-bot"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+python-dotenv = "^1.0.0"
+python-telegram-bot = "^20.7"
+selenium = "^4.17.2"
+webdriver-manager = "^4.0.1"
+beautifulsoup4 = "^4.12.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

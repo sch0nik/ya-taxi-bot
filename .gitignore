@@ -1,0 +1,4 @@
+*temp*
+*.json
+.env
+.idea
