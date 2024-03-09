@@ -99,9 +99,6 @@ async def start_taxi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         r'https?:\/\/dostavka\.yandex\.ru\/route\/\S+',
         update.message.text
     )
-    logging.info(
-        f'{update.effective_chat.effective_name}::{update.effective_chat.id}::{update.message.text}'
-    )
     for url in urls:
         await processing(url, update.effective_chat.id, update.message, context.bot)
 
