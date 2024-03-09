@@ -74,14 +74,21 @@ async def extract_info(browser):
     return False, False
 
 
+def find_id(url: str):
+    _ = url.split('/')
+    return _[-1] if url[-1] != '/' else _[-2]
+
+
 async def processing(url: str, chat_id, message, bot):
-    logging.info('такси запущено')
+    id_taxi = url.split('/')
+    logging.info(f'Процесс такси-{id_taxi} запущен')
     browser = webdriver.Chrome(service=ChromeService, options=ChromeOptions)
     browser.get(url)
     await asyncio.sleep(5)
 
     while True:
         state, info = await extract_info(browser)
+        logging.info(f'Такси-{id_taxi}, {state=}, {info=}')
         if not (state or info):
             break
         await bot.send_message(chat_id, info)
@@ -99,8 +106,13 @@ async def start_taxi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         r'https?:\/\/dostavka\.yandex\.ru\/route\/\S+',
         update.message.text
     )
+    logging.info(
+        f'{update.effective_chat.effective_name}::{update.effective_chat.id}::{update.message.text}'
+    )
     for url in urls:
         await processing(url, update.effective_chat.id, update.message, context.bot)
+    # list_taxi = [processing(url, update.effective_chat.id, update.message, context.bot) for url in urls]
+    # await asyncio.gather(*list_taxi)
 
 
 if __name__ == '__main__':
