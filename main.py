@@ -74,7 +74,7 @@ async def extract_info(browser):
     return False, False
 
 
-async def taxi(url: str, chat_id, message, bot):
+async def processing(url: str, chat_id, message, bot):
     logging.info('такси запущено')
     browser = webdriver.Chrome(service=ChromeService, options=ChromeOptions)
     browser.get(url)
@@ -103,7 +103,7 @@ async def start_taxi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f'{update.effective_chat.effective_name}::{update.effective_chat.id}::{update.message.text}'
     )
     for url in urls:
-        await taxi(url, update.effective_chat.id, update.message, context.bot)
+        await processing(url, update.effective_chat.id, update.message, context.bot)
 
 
 if __name__ == '__main__':
