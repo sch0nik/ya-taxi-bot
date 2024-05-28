@@ -1,6 +1,6 @@
 import asyncio
 import json
-import logging
+import logging.config
 import os
 import re
 from json import JSONDecodeError
@@ -13,9 +13,9 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 from webdriver_manager.chrome import ChromeDriverManager
 
-
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='ya.log',
+    format='%(asctime)s::%(name)s::%(levelname)s::%(message)s',
     level=logging.INFO,
 )
 
@@ -40,8 +40,7 @@ application = ApplicationBuilder().token(TOKEN).build()
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=('''Локальный бот для тестов. Сейчас яндекс-доставка.'''
-              '''Отправьте мне или в чат сообщение в котором только ссылка на доставку''')
+        text='''Бот для отслеживания яндекс-доставки'''
     )
 
 
@@ -59,7 +58,7 @@ async def extract_info(browser):
                     body['body'] = json.loads(body['body'])
                     info = (
                             body['body'].get('performer').get('name') + '\n' +
-                            body['body'].get('performer').get('vehicle_model') + '\n' +
+                            body['body'].get('description') + '\n' +
                             body['body'].get('performer').get('vehicle_number') + '\n' +
                             body['body'].get('summary') + '\n'
                     )
@@ -76,24 +75,27 @@ async def extract_info(browser):
 
 def find_id(url: str):
     _ = url.split('/')
-    return _[-1] if url[-1] != '/' else _[-2]
+    res = _[-1] if url[-1] != '/' else _[-2]
+    return f'<{res}>'
 
 
 async def processing(url: str, chat_id, message, bot):
-    id_taxi = url.split('/')
-    logging.info(f'Процесс такси-{id_taxi} запущен')
+    id_taxi = find_id(url)
+    logging.info(f'Процесс такси {id_taxi} запущен')
     browser = webdriver.Chrome(service=ChromeService, options=ChromeOptions)
     browser.get(url)
     await asyncio.sleep(5)
 
     while True:
         state, info = await extract_info(browser)
-        logging.info(f'Такси-{id_taxi}, {state=}, {info=}')
-        if not (state or info):
+        if not info:
+            await message.reply_text('Кажется ссылка на такси устарела.')
+            logging.info(f'Такси {id_taxi}, нет данных {info=}')
             break
         await bot.send_message(chat_id, info)
         if state:
-            message.reply_text(info)
+            await message.reply_text(info)
+            logging.info(f'Такси {id_taxi} завершено, {state=}')
             break
         await asyncio.sleep(10 * 60)
         browser.refresh()
@@ -109,10 +111,8 @@ async def start_taxi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(
         f'{update.effective_chat.effective_name}::{update.effective_chat.id}::{update.message.text}'
     )
-    for url in urls:
-        await processing(url, update.effective_chat.id, update.message, context.bot)
-    # list_taxi = [processing(url, update.effective_chat.id, update.message, context.bot) for url in urls]
-    # await asyncio.gather(*list_taxi)
+    list_taxi = [processing(url, update.effective_chat.id, update.message, context.bot) for url in urls]
+    await asyncio.gather(*list_taxi)
 
 
 if __name__ == '__main__':
